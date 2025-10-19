@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>通用 JS 执行器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 16px;
+            background: #f5f7fa;
+            margin: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .btn-group {
+            margin: 12px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        #output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #7f8c8d;
+        }
+        .placeholder {
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>通用 JavaScript 执行器</h2>
+        <textarea id="codeInput" spellcheck="false">// 在此处输入任意 JavaScript 代码
+// 支持 async/await、eda API、console.log 等
+
+(async () => {
+    const libs = await eda.lib_LibrariesList.getAllLibrariesList();
+    const target = libs.find(l => l.name === "测试团队2");
+    if (target) {
+        console.log("找到库:", target.name);
+        return target.uuid;
+    } else {
+        console.warn("未找到目标库");
+        return null;
+    }
+})();
+</textarea>
+
+        <div class="btn-group">
+            <button id="runBtn">▶ 执行代码</button>
+            <button id="clearBtn" style="background:#95a5a6; margin-left:8px;">🗑️ 清空输出</button>
+        </div>
+
+        <div id="output" class="placeholder">执行结果将显示在这里...</div>
+    </div>
+
+    <script>
+        // 重定向 console.log 到输出区域
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function appendOutput(text, className = '') {
+            const output = document.getElementById('output');
+            output.classList.remove('placeholder');
+            output.innerHTML += `${text}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        console.log = (...args) => {
+            originalLog(...args);
+            appendOutput(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' '));
+        };
+
+        console.error = (...args) => {
+            originalError(...args);
+            appendOutput(`[ERROR] ${args.map(arg => String(arg)).join(' ')}`, 'error');
+        };
+
+        console.warn = (...args) => {
+            originalWarn(...args);
+            appendOutput(`[WARN] ${args.map(arg => String(arg)).join(' ')}`, 'warn');
+        };
+
+        document.getElementById('runBtn').addEventListener('click', async () => {
+            const code = document.getElementById('codeInput').value.trim();
+            if (!code) {
+                alert('请输入 JavaScript 代码！');
+                return;
+            }
+
+            const output = document.getElementById('output');
+            output.innerHTML = '⏳ 正在执行...\n';
+            output.classList.remove('placeholder');
+            document.getElementById('runBtn').disabled = true;
+
+            try {
+                // 包装用户代码为 async 函数并执行
+                const asyncWrapper = `(async () => { ${code} })()`;
+                const result = await eval(asyncWrapper);
+
+                if (result !== undefined) {
+                    console.log('[返回值]:', result);
+                }
+            } catch (error) {
+                console.error('执行出错:', error.message || error);
+            } finally {
+                document.getElementById('runBtn').disabled = false;
+            }
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+            output.classList.add('placeholder');
+            output.textContent = '执行结果将显示在这里...';
+        });
+
+        // 聚焦代码区
+        document.getElementById('codeInput').focus();
+    </script>
+</body>
+</html>

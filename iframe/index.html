@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <title>删除库中的器件/符号/封装</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+  <table>
+    <tbody>
+      <tr>
+        <td align="right"><span style="font-size: 14px">选择库：</span></td>
+        <td>
+          <select id="librarySelect" style="max-width: 160px">
+            <option value="">---</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td align="right"><span style="font-size: 14px">删除内容：</span></td>
+        <td>
+          <label><input type="checkbox" id="chkDevice" /> 器件 (Devices)</label><br />
+          <label><input type="checkbox" id="chkSymbol" /> 符号 (Symbols)</label><br />
+          <label><input type="checkbox" id="chkFootprint" /> 封装 (Footprints)</label>
+          <p style="font-size:11px; color:#666;">三者独立，可多选。将删除库中所有对应类型的资源。</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <br />
+  <input id="deleteButton" value="执行删除" type="button" />&nbsp;
+  <span id="messageBar" style="font-size: 11px">请选择库和要删除的内容</span>
+
+<script>
+  // 加载库列表（不变）
+  document.getElementById('librarySelect').onclick = async function () {
+    if (this.options.length > 1) return;
+
+    const libs = [];
+    const add = (name, uuid) => uuid && libs.push({ name, uuid });	//定义箭头函数 
+
+    const personal = await eda.lib_LibrariesList.getPersonalLibraryUuid();
+    add('个人', await eda.lib_LibrariesList.getPersonalLibraryUuid());
+    add('工程', await eda.lib_LibrariesList.getProjectLibraryUuid());
+    add('收藏', await eda.lib_LibrariesList.getFavoriteLibraryUuid());
+    libs.push(...(await eda.lib_LibrariesList.getAllLibrariesList()));
+
+    libs.forEach(lib => {
+      const opt = document.createElement('option');
+      opt.value = lib.uuid;
+      opt.textContent = lib.name;
+      this.appendChild(opt);
+    });
+  };
+
+  // 通用搜索函数（器件/符号）
+  async function searchAllUuids(apiSearch, libraryUuid, typeName) {
+    const itemsOfPage = 10000;
+    try {
+      const result = await apiSearch('', libraryUuid, undefined, 2, itemsOfPage, 1);
+      return (result || []).map(item => item.uuid);
+    } catch (err) {
+      console.error(`搜索 ${typeName} 失败:`, err);
+      return [];
+    }
+  }
+
+  // 封装搜索（5 参数）
+  async function searchFootprints(libraryUuid) {
+    const itemsOfPage = 10000;
+    try {
+      const result = await eda.lib_Footprint.search('', libraryUuid, undefined, itemsOfPage, 1);
+      return (result || []).map(item => item.uuid);
+    } catch (err) {
+      console.error('搜索 封装 失败:', err);
+      return [];
+    }
+  }
+
+  document.getElementById('deleteButton').onclick = function () {
+    const libSel = document.getElementById('librarySelect');
+    const libUuid = libSel.value;
+    if (!libUuid) return alert('请先选择一个库！');
+
+    const libName = libSel.options[libSel.selectedIndex].text;
+
+    const delDev = document.getElementById('chkDevice').checked;
+    const delSym = document.getElementById('chkSymbol').checked;
+    const delFp  = document.getElementById('chkFootprint').checked;
+
+    if (!delDev && !delSym && !delFp) return alert('请至少选择一项删除内容！');
+
+    const types = [];
+    if (delDev) types.push('器件');
+    if (delSym) types.push('符号');
+    if (delFp)  types.push('封装');
+
+    const content = `⚠️ 警告：将从【${libName}】库中永久删除以下内容：\n• ${types.join('\n• ')}\n\n此操作不可逆，是否继续？`;
+
+    eda.sys_Dialog.showConfirmationMessage(
+      content,
+      '确认删除',
+      '确定',
+      '取消',
+      async (mainButtonClicked) => {
+        if (!mainButtonClicked) return;
+
+        const deleteButton = document.getElementById('deleteButton');
+        deleteButton.disabled = true;
+        const msg = document.getElementById('messageBar');
+
+        try {
+          let totalDeleted = 0;
+          const allDeletionPromises = [];
+
+          // === 器件 ===
+          if (delDev) {
+            msg.innerHTML = '正在获取器件列表...';
+            const devUuids = await searchAllUuids(eda.lib_Device.search, libUuid, '器件');
+            msg.innerHTML = `找到 ${devUuids.length} 个器件，开始删除...`;
+            const devPromises = devUuids.map(uuid => eda.lib_Device.delete(uuid, libUuid));
+            allDeletionPromises.push(...devPromises);
+            totalDeleted += devUuids.length;
+          }
+
+          // === 符号 ===
+          if (delSym) {
+            msg.innerHTML = '正在获取符号列表...';
+            const symUuids = await searchAllUuids(eda.lib_Symbol.search, libUuid, '符号');
+            msg.innerHTML = `找到 ${symUuids.length} 个符号，开始删除...`;
+            const symPromises = symUuids.map(uuid => eda.lib_Symbol.delete(uuid, libUuid));
+            allDeletionPromises.push(...symPromises);
+            totalDeleted += symUuids.length;
+          }
+
+          // === 封装 ===
+          if (delFp) {
+            msg.innerHTML = '正在获取封装列表...';
+            const fpUuids = await searchFootprints(libUuid);
+            msg.innerHTML = `找到 ${fpUuids.length} 个封装，开始删除...`;
+            const fpPromises = fpUuids.map(uuid => eda.lib_Footprint.delete(uuid, libUuid));
+            allDeletionPromises.push(...fpPromises);
+            totalDeleted += fpUuids.length;
+          }
+
+          // 执行所有删除（高并发）
+          await Promise.all(allDeletionPromises);
+
+          msg.innerHTML = `✅ 删除完成！共成功删除 ${totalDeleted} 项资源。`;
+          alert(`【${libName}】库中选定的内容已全部删除！`);
+
+        } catch (error) {
+          console.error('删除过程中出错:', error);
+          msg.innerHTML = '❌ 操作失败，请查看控制台日志。';
+          alert('操作失败，请检查控制台错误信息。');
+        } finally {
+          deleteButton.disabled = false;
+        }
+      }
+    );
+  };
+</script>
+
+
+
+
+</body>
+</html>
