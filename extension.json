@@ -1,37 +1,37 @@
 {
 	"name": "eext-delete-all-components",
 	"uuid": "21a634cce36043598e2f7ad09dd76fae",
-	"displayName": "快速删除器件",
-	"description": "在嘉立创EDA中快速删除器件，符号或封装",
+	"displayName": "删除元器件",
+	"description": "快速批量删除个人或团队的全部器件，符号或封装",
 	"version": "1.10.1",
-	"publisher": "JLCEDA <support@lceda.cn>",
+	"publisher": "JLCEDA",
 	"engines": {
-		"eda": "^2.3.0"
+		"eda": "^2.2.40"
 	},
 	"license": "Apache-2.0",
 	"repository": {
 		"type": "extension-store",
 		"url": ""
 	},
-	"categories": "Other",
-	"keywords": ["SDK"],
+	"categories": "Library",
+	"keywords": ["Delete"],
 	"images": {
 		"logo": "./images/logo.png"
 	},
-	"homepage": "https://pro.lceda.cn",
-	"bugs": "https://lceda.cn/page/feedback?originPage=other",
+	"homepage": "https://github.com/easyeda/eext-delete-all-components",
+	"bugs": "https://github.com/easyeda/eext-delete-all-components/issues",
 	"activationEvents": {},
 	"entry": "./dist/index",
 	"dependentExtensions": {},
 	"headerMenus": {
 		"home": [
 			{
-				"id": "API SDK",
-				"title": "API SDK",
+				"id": "批量删除",
+				"title": "批量删除元件",
 				"menuItems": [
 					{
 						"id": "About",
-						"title": "About...",
+						"title": "批量删除元器件...",
 						"registerFn": "about"
 					}
 				]
@@ -40,11 +40,11 @@
 		"sch": [
 			{
 				"id": "批量删除",
-				"title": "删除",
+				"title": "批量删除元件",
 				"menuItems": [
 					{
 						"id": "About",
-						"title": "打开...",
+						"title": "批量删除元器件...",
 						"registerFn": "about"
 					}
 				]
@@ -52,12 +52,12 @@
 		],
 		"pcb": [
 			{
-				"id": "API SDK",
-				"title": "API SDK",
+				"id": "批量删除",
+				"title": "批量删除元件",
 				"menuItems": [
 					{
 						"id": "About",
-						"title": "About...",
+						"title": "批量删除元器件...",
 						"registerFn": "about"
 					}
 				]
