@@ -1,5 +1,7 @@
 # eext-delete-all-components
 
+[English](./README.en.md)
+
 简体中文说明
 
 ## 项目简介
