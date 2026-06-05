@@ -1,3 +1,6 @@
 {
-	"About...": "About..."
+	"About...": "About...",
+	"Delete Components": "Delete Components",
+	"Quickly batch delete all devices, symbols or footprints from personal or team libraries": "Quickly batch delete all devices, symbols or footprints from personal or team libraries",
+	"Delete": "Delete"
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>通用 JS 执行器</title>
+    <title id="pageTitle"></title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -69,33 +69,46 @@
 </head>
 <body>
     <div class="container">
-        <h2>通用 JavaScript 执行器</h2>
-        <textarea id="codeInput" spellcheck="false">// 在此处输入任意 JavaScript 代码
-// 支持 async/await、eda API、console.log 等
-
-(async () => {
-    const libs = await eda.lib_LibrariesList.getAllLibrariesList();
-    const target = libs.find(l => l.name === "测试团队2");
-    if (target) {
-        console.log("找到库:", target.name);
-        return target.uuid;
-    } else {
-        console.warn("未找到目标库");
-        return null;
-    }
-})();
-</textarea>
+        <h2 id="heading"></h2>
+        <textarea id="codeInput" spellcheck="false"></textarea>
 
         <div class="btn-group">
-            <button id="runBtn">▶ 执行代码</button>
-            <button id="clearBtn" style="background:#95a5a6; margin-left:8px;">🗑️ 清空输出</button>
+            <button id="runBtn"></button>
+            <button id="clearBtn" style="background:#95a5a6; margin-left:8px;"></button>
         </div>
 
-        <div id="output" class="placeholder">执行结果将显示在这里...</div>
+        <div id="output" class="placeholder"></div>
     </div>
 
     <script>
-        // 重定向 console.log 到输出区域
+        var edaObj = (typeof eda !== 'undefined') ? eda : (window.parent && window.parent.eda);
+        function t(tag, ...args) {
+            if (edaObj && edaObj.sys_I18n) return edaObj.sys_I18n.text(tag, undefined, undefined, ...args);
+            return tag;
+        }
+
+        // Apply i18n to HTML elements
+        document.getElementById('pageTitle').textContent = t('General JS Executor');
+        document.getElementById('heading').textContent = t('General JavaScript Executor');
+        document.getElementById('runBtn').textContent = '▶ ' + t('Run Code');
+        document.getElementById('clearBtn').textContent = '🗑️ ' + t('Clear Output');
+        document.getElementById('output').textContent = t('Execution results will be displayed here...');
+        document.getElementById('codeInput').value =
+            '// ' + t('Enter any JavaScript code here') + '\n' +
+            '// ' + t('Supports async/await, eda API, console.log, etc.') + '\n' +
+            '\n' +
+            '(async () => {\n' +
+            '    const libs = await eda.lib_LibrariesList.getAllLibrariesList();\n' +
+            '    const target = libs.find(l => l.name === "' + t('Test Team 2') + '");\n' +
+            '    if (target) {\n' +
+            '        console.log("' + t('Found library:') + '", target.name);\n' +
+            '        return target.uuid;\n' +
+            '    } else {\n' +
+            '        console.warn("' + t('Target library not found') + '");\n' +
+            '        return null;\n' +
+            '    }\n' +
+            '})();';
+
         const originalLog = console.log;
         const originalError = console.error;
         const originalWarn = console.warn;
@@ -125,25 +138,24 @@
         document.getElementById('runBtn').addEventListener('click', async () => {
             const code = document.getElementById('codeInput').value.trim();
             if (!code) {
-                alert('请输入 JavaScript 代码！');
+                alert(t('Please enter JavaScript code!'));
                 return;
             }
 
             const output = document.getElementById('output');
-            output.innerHTML = '⏳ 正在执行...\n';
+            output.innerHTML = '⏳ ' + t('Executing...') + '\n';
             output.classList.remove('placeholder');
             document.getElementById('runBtn').disabled = true;
 
             try {
-                // 包装用户代码为 async 函数并执行
                 const asyncWrapper = `(async () => { ${code} })()`;
                 const result = await eval(asyncWrapper);
 
                 if (result !== undefined) {
-                    console.log('[返回值]:', result);
+                    console.log(t('Return value:'), result);
                 }
             } catch (error) {
-                console.error('执行出错:', error.message || error);
+                console.error(t('Execution error:'), error.message || error);
             } finally {
                 document.getElementById('runBtn').disabled = false;
             }
@@ -153,10 +165,9 @@
             const output = document.getElementById('output');
             output.innerHTML = '';
             output.classList.add('placeholder');
-            output.textContent = '执行结果将显示在这里...';
+            output.textContent = t('Execution results will be displayed here...');
         });
 
-        // 聚焦代码区
         document.getElementById('codeInput').focus();
     </script>
 </body>
