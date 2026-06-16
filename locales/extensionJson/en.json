@@ -1,6 +1,10 @@
 {
 	"About...": "About...",
+	"Delete": "Delete",
 	"Delete Components": "Delete Components",
 	"Quickly batch delete all devices, symbols or footprints from personal or team libraries": "Quickly batch delete all devices, symbols or footprints from personal or team libraries",
-	"Delete": "Delete"
+	"批量删除元件": "Batch Delete Components",
+	"批量删除元器件...": "Batch Delete Components...",
+	"删除元器件": "Delete Components",
+	"快速批量删除个人或团队的全部器件，符号或封装": "Quickly batch delete all devices, symbols or footprints from personal or team libraries"
 }
